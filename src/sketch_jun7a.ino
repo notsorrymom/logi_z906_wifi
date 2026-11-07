@@ -1,6 +1,7 @@
 #include "WifiSetup.h"
 #include "mqtt.h"
 #include "z906.h"
+#include "secrets.h"
 
 unsigned long timerMQTT = millis();
 //Do NOT change this to non-pointer Objects - ESP will crash, but don't ask me why
@@ -40,7 +41,7 @@ void setup() {
 
   mqttClient = new MQTT();
   // Use this for IP
-  mqttClient->Setup(IPAddress(192, 168, 0, 111), 1883, "your-mqtt-user", "your-mqtt-password");
+  mqttClient->Setup(IPAddress(MQTT_BROKER_IP), MQTT_PORT, MQTT_USER, MQTT_PASSWORD);
   // Use this for domain
   // mqttClient.Setup("your-mqqt-domain", 1883, "your-mqtt-user", "your-mqtt-password");
   mqttClient->Connect();

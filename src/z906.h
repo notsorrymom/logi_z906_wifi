@@ -29,6 +29,10 @@ private:
   const int8_t RX_AMP_GPIO = 22;
   const int8_t TX_AMP_GPIO = 23;
 
+  //Power button simulation (Optocoupler PC817 parallel to the console's power button)
+  const int8_t POWER_BUTTON_GPIO = 27;
+  const unsigned long POWER_BUTTON_PULSE_MS = 400;
+
   const unsigned long BAUD_RATE_LOGITECH = 57600;
 
 public:
@@ -155,6 +159,10 @@ private:
   long _mqtt_timeout;
   long _mqtt_power_timeout;
 
+  //Power button pulse state (non-blocking)
+  bool _power_button_pressed;
+  unsigned long _power_button_release_at;
+
   void _Set_Serial_Timeout();
   bool _Is_Serial_Timeout_Over();
   //AutoDisovery for each Entitity
@@ -163,6 +171,7 @@ private:
   void _AutoDiscovery_Volume_Center(MQTT* mqttClient);
   void _AutoDiscovery_Volume_Rear(MQTT* mqttClient);
   void _AutoDiscovery_Power(MQTT* mqttClient);
+  void _AutoDiscovery_PowerButton(MQTT* mqttClient);
   void _AutoDiscovery_Mute(MQTT* mqttClient);
   void _AutoDiscovery_Input(MQTT* mqttClient);
   void _AutoDiscovery_Effect(MQTT* mqttClient);
@@ -187,7 +196,7 @@ private:
   void _OnMQTTMessage_SetVolume_Bass(MQTT* mqttClient, const char* message);
   void _OnMQTTMessage_SetVolume_Center(MQTT* mqttClient, const char* message);
   void _OnMQTTMessage_SetVolume_Rear(MQTT* mqttClient, const char* message);
-  //void _OnMQTTMessage_SetSwitch_Power(MQTT* mqttClient, const char* message);
+  void _OnMQTTMessage_PressPowerButton(MQTT* mqttClient, const char* message);
   //void _OnMQTTMessage_SetSwitch_Mute(MQTT* mqttClient, const char* message);
   void _OnMQTTMessage_SetSelect_Input(MQTT* mqttClient, const char* message);
   void _OnMQTTMessage_SetSelect_Effect(MQTT* mqttClient, const char* message);
@@ -225,6 +234,10 @@ public:
   void PublishPowerState(MQTT* mqttClient);
 
   bool IsSerialPossible() const;
+
+  //Releases the power button pulse (GPIO LOW) once POWER_BUTTON_PULSE_MS elapsed.
+  //Must be called every loop iteration; non-blocking.
+  void UpdatePowerButton();
 
   void Update(MQTT* mqttClient);
 };

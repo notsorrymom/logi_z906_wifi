@@ -3,7 +3,9 @@
 
 void Z906::OnMQTTMessage(MQTT* mqttClient, const char* topic, const char* message) {
   //Handles MQTT Broker Messages
-  if (strcmp(topic, "homeassistant/number/z906/volume/set") == 0) {
+  if (strcmp(topic, "homeassistant/button/z906/power_toggle/set") == 0) {
+    _OnMQTTMessage_PressPowerButton(mqttClient, message);
+  } else if (strcmp(topic, "homeassistant/number/z906/volume/set") == 0) {
     _OnMQTTMessage_SetVolume(mqttClient, message);
   } else if (strcmp(topic, "homeassistant/number/z906/volume/bass/set") == 0) {
     _OnMQTTMessage_SetVolume_Bass(mqttClient, message);
@@ -132,4 +134,18 @@ void Z906::_OnMQTTMessage_SetSelect_Effect(MQTT* mqttClient, const char* message
   Serial.println(static_cast<int>(effect));
 
   _Serial_Send_To_Amplifier(static_cast<uint8_t>(Z906::_Helper_ConvertEffectToSerialHeader(effect)));
+}
+
+void Z906::_OnMQTTMessage_PressPowerButton(MQTT* mqttClient, const char* message) {
+  //Simulates a single press of the console's physical power button via the
+  //PC817 optocoupler on POWER_BUTTON_GPIO. Non-blocking: UpdatePowerButton()
+  //(called every Update()) releases the pin again after POWER_BUTTON_PULSE_MS.
+  if (_power_button_pressed) {
+    //A pulse is already in flight - ignore to avoid holding the button down.
+    return;
+  }
+  digitalWrite(POWER_BUTTON_GPIO, HIGH);
+  _power_button_pressed = true;
+  _power_button_release_at = millis() + POWER_BUTTON_PULSE_MS;
+  Serial.println("Power button pulse triggered");
 }

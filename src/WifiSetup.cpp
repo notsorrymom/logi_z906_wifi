@@ -1,8 +1,9 @@
 #include <WiFi.h>
 #include "WifiSetup.h"
+#include "secrets.h"
 
-const char* ssid = "your WiFi SSID";
-const char* password = "your WiFI Password";
+const char* ssid = WIFI_SSID;
+const char* password = WIFI_PASSWORD;
 
 static volatile bool wifi_connected = false;
 

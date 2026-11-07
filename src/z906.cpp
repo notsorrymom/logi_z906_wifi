@@ -15,12 +15,19 @@ Z906::Z906()
     _mqtt_timeout(millis() + Z906::MQTT_TIMEOUT),
     _mqtt_power_timeout(millis() + Z906::MQTT_POWER_TIMEOUT),
     _timer(0),
-    _has_value_changed(false) {
+    _has_value_changed(false),
+    _power_button_pressed(false),
+    _power_button_release_at(0) {
 
   pinMode(TX_CONSOLE_GPIO, OUTPUT);
   digitalWrite(TX_CONSOLE_GPIO, HIGH);
   pinMode(TX_AMP_GPIO, OUTPUT);
   digitalWrite(TX_AMP_GPIO, HIGH);
+
+  //Power button simulation: keep LOW at boot so the optocoupler never holds
+  //the console's power button pressed.
+  pinMode(POWER_BUTTON_GPIO, OUTPUT);
+  digitalWrite(POWER_BUTTON_GPIO, LOW);
 
   serialConsole = new HardwareSerial(1);
   serialAmp = new HardwareSerial(2);
@@ -41,6 +48,7 @@ void Z906::Subscribe(MQTT* mqttClient) {
   mqttClient->Subscribe("homeassistant/number/z906/volume/rear/set");
   mqttClient->Subscribe("homeassistant/select/z906/input/set");
   mqttClient->Subscribe("homeassistant/select/z906/effect/set");
+  mqttClient->Subscribe("homeassistant/button/z906/power_toggle/set");
 }
 
 void Z906::PublishCurrentStates(MQTT* mqttClient, bool force) {
@@ -101,6 +109,9 @@ bool Z906::IsSerialPossible() const {
 }
 
 void Z906::Update(MQTT* mqttClient) {
+  //release the power-button pulse if due (non-blocking)
+  UpdatePowerButton();
+
   //update mqtt data
   if (millis() > _mqtt_timeout) {
     _mqtt_timeout = millis() + Z906::MQTT_TIMEOUT;
@@ -138,4 +149,11 @@ void Z906::Update(MQTT* mqttClient) {
 
   //TX RX Timeout
   delay(5);
+}
+
+void Z906::UpdatePowerButton() {
+  if (_power_button_pressed && millis() >= _power_button_release_at) {
+    digitalWrite(POWER_BUTTON_GPIO, LOW);
+    _power_button_pressed = false;
+  }
 }

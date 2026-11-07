@@ -10,6 +10,7 @@ void Z906::AutoDiscovery(MQTT *mqttClient) {
   _AutoDiscovery_Volume_Center(mqttClient);
   _AutoDiscovery_Volume_Rear(mqttClient);
   _AutoDiscovery_Power(mqttClient);
+  _AutoDiscovery_PowerButton(mqttClient);
   //Mute is kept track in Console
   //_AutoDiscovery_Mute(mqttClient);
   _AutoDiscovery_Input(mqttClient);
@@ -78,6 +79,26 @@ void Z906::_AutoDiscovery_Power(MQTT *mqttClient) {
   String payload;
   serializeJson(doc, payload);
   mqttClient->Publish("homeassistant/binary_sensor/power/config", payload.c_str(), true);
+}
+
+void Z906::_AutoDiscovery_PowerButton(MQTT *mqttClient) {
+  //MQTT "button" platform: command_topic only, no state_topic needed.
+  StaticJsonDocument<512> doc;
+  doc["name"] = "Power Toggle";
+  doc["unique_id"] = "Z906_Power_Toggle";
+  doc["command_topic"] = "homeassistant/button/z906/power_toggle/set";
+  doc["payload_press"] = "PRESS";
+  doc["device_class"] = "restart";
+  JsonObject device = doc.createNestedObject("device");
+  device["name"] = "Z906";
+  device["model"] = "Z906";
+  device["manufacturer"] = "Logitech";
+  JsonArray identifiers = doc["device"].createNestedArray("identifiers");
+  identifiers.add("Z906");
+
+  String payload;
+  serializeJson(doc, payload);
+  mqttClient->Publish("homeassistant/button/power_toggle/config", payload.c_str(), true);
 }
 
 void Z906::_AutoDiscovery_Mute(MQTT *mqttClient) {
